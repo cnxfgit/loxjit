@@ -1,0 +1,30 @@
+{
+    "C_Cpp.clang_format_style": "{ BasedOnStyle: LLVM, BreakBeforeBraces: Attach, IndentWidth: 4, TabWidth: 4}",
+    "files.associations": {
+        "time.h": "c",
+        "stddef.h": "c",
+        "stdint.h": "c",
+        "optional": "c",
+        "istream": "c",
+        "ostream": "c",
+        "ratio": "c",
+        "system_error": "c",
+        "array": "c",
+        "functional": "c",
+        "tuple": "c",
+        "type_traits": "c",
+        "utility": "c",
+        "vector": "c",
+        "string_view": "c",
+        "*.tcc": "c",
+        "common.h": "c",
+        "object.h": "c",
+        "jit_x64.h": "c",
+        "dasm_x86.h": "c",
+        "jit.h": "c",
+        "dasm_proto.h": "c",
+        "random": "c",
+        "value.h": "c"
+    },
+    "commentTranslate.hover.enabled": false
+}

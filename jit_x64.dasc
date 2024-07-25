@@ -1,0 +1,178 @@
+|.arch x64
+|.section code
+
+// 调用者保存寄存器：RAX, RDI, RSI, RDX, RCX, R8-R11。
+// 被调用者保存寄存器：RBP, RBX, R12-R15。
+|.type VM,		 VM,	r15	        // VM
+|.type TOP,      Value, r14         // VM->stackTop 
+|.type CF,		 CallFrame, r13	    // VM->frames[VM->frameCount-1]
+|.type JS,       JitState, r12      // VM->J
+|.type CLOSURE,	 ObjClosure, rbx	// CallFrame->closure
+ 
+
+|.type VALUE,	    Value
+|.type CFRAME,		CallFrame
+|.type OBJ,	        Obj
+|.type OFUNCTION,	ObjFunction
+|.type ONATIVE,		ObjNative
+|.type OSTRING,	    ObjString
+|.type OUPVALUE,	ObjUpvalue
+|.type OCLOSURE,	ObjClosure
+|.type OCLASS,		ObjClass
+|.type OINSTANCE,	ObjInstance
+|.type OMETHOD,		ObjBoundMethod
+|.type TABLE,		Table
+|.type ENTRY,		Entry
+
+|.define LUA_OBJ_BOUND_METHOD,  0
+|.define LUA_OBJ_CLASS,		    1
+|.define LUA_OBJ_CLOSURE,       2
+|.define LUA_OBJ_FUNCTION,		3
+|.define LUA_OBJ_INSTANCE,		4
+|.define LUA_OBJ_NATIVE,		5
+|.define LUA_OBJ_STRING,		6
+|.define LUA_OBJ_UPVALUE,		7
+
+|.define CARG1,		rdi		// x64/POSIX C call arguments.
+|.define CARG2,		rsi
+|.define CARG3,		rdx
+|.define CARG4,		rcx
+|.define CARG5,		r8
+|.define CARG6,		r9
+
+|.macro call64, func
+|  mov64 rax, (ptrdiff_t)func
+|  call rax
+|.endmacro
+
+
+|.actionlist actionList
+|.globals jitGlobal_
+
+const char loxJIT_arch[] = "x64";
+
+// 要保证栈对齐 16字节 即除rbp外，push reg要成对出现，否则会造成Segmentation fault (core dumped)
+static void preCall(Dst_DECL) {
+    |.align 16
+    |->main:
+    | push rbp
+    | mov  rbp, rsp
+    | push rax
+    | push rbx
+    | push r12
+    | push r13
+    | push r14
+    | push r15
+    | mov JS, CARG1
+    | mov64 VM, (ptrdiff_t)&vm
+    | mov CF, VM->frames
+}
+
+static void jitOpConstant(dasm_State *state, ObjClosure *closure, size_t* i) {
+    Value constant = closure->function->chunk.constants.values[*i];
+    (*i)++;
+    |.align 16
+    | mov64 CARG1, (ptrdiff_t)constant
+    | call64 push
+}
+
+static void jitOpNil(dasm_State *state) {
+    |.align 16
+    | mov64 CARG1, (ptrdiff_t)NIL_VAL
+    | call64 push
+}
+
+static void jitOpTrue() {}
+
+static void jitOpFalse() {}
+
+static void jitOpPop() {}
+
+static void jitOpGetLocal() {}
+
+static void jitOpSetLocal() {}
+
+static void jitOpGetGlobal() {}
+
+static void jitOpDefineGlobal() {}
+
+static void jitOpSetGlobal() {}
+
+static void jitOpGetUpvalue() {}
+
+static void jitOpSetUpvalue() {}
+
+static void jitOpGetProperty() {}
+
+static void jitOpSetProperty() {}
+
+static void jitOpGetSuper() {}
+
+static void jitOpEqual() {}
+
+static void jitOpGreater() {}
+
+static void jitOpLess() {}
+
+static void jitOpAdd() {}
+
+static void jitOpSubtract() {}
+
+static void jitOpMultiply() {}
+
+static void jitOpDivide() {}
+
+static void jitOpNot() {}
+
+static void jitOpNegate() {}
+
+static void jitOpPrint(dasm_State *state) {
+    |.align 16
+    | call64 pop
+    | mov CARG1, rax
+    | call64 (ptrdiff_t)printValue
+    | mov CARG1, '\n'
+    | call64 putchar
+}
+
+static void jitOpJump() {}
+
+static void jitOpJumpIfFalse() {}
+
+static void jitOpLoop() {}
+
+static void jitOpCall() {}
+
+static void jitOpInvoke() {}
+
+static void jitOpSuperInvoke() {}
+
+static void jitOpClosure() {}
+
+static void jitOpCloseUpvalue() {}
+
+    //| sub rax, 1
+    //| mov CARG1, CF->slots
+    //| call64 closeUpvalues
+
+static void jitOpReutrn(dasm_State *state) {
+    | call64 pop
+    | mov eax, VM->frameCount
+    | sub eax, 1
+    | 
+    |1:
+    | pop rbx
+    | pop rax
+    | pop r15
+    | pop r14
+    | pop r13
+    | pop r12
+    | pop rbp
+    | ret 
+}
+
+static void jitOpClass() {}
+
+static void jitOpInherit() {}
+
+static void jitOpMethod() {}
