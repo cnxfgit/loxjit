@@ -20,158 +20,161 @@ static void initJit(Dst_DECL, const void *actionList) {
 
 void* jitCompile(ObjClosure *closure) {
     vm.J->closure = closure;
-    dasm_State *state;
+    //dasm_State *state;
     initJit(Dst, actionList);
     // once
-    vm.J->jgbl = malloc(sizeof(void *) * jitGlobal__MAX);
+    vm.J->jgbl = malloc(sizeof(void *) * (jitGlobal__MAX+10));
+    memset((void *)vm.J->jgbl, 0, jitGlobal__MAX * sizeof(void *));
     dasm_setupglobal(Dst, vm.J->jgbl, jitGlobal__MAX);
+    dasm_setup(Dst, actionList); // dasm_setupglobal一定要再调用setup 给local label 初始化
+
+    dasm_State *state = vm.J->D;
 
     uint8_t *codes = closure->function->chunk.code;
     int codeCount = closure->function->chunk.count;
 
-    dasm_growpc(Dst, codeCount + 3);
+    dasm_growpc(Dst, 20);
 
     preCall(Dst);
-    for (size_t i = 0; i < codeCount; i++) {
-        uint8_t opcode = codes[i];
-        switch (opcode) {
-        case OP_CONSTANT:
-            jitOpConstant(state, closure, &i);
-            break;
-        case OP_NIL:
-            jitOpNil(state);
-            break;
-        case OP_TRUE:
-            jitOpTrue();
-            break;
-        case OP_FALSE:
-            jitOpFalse();
-            break;
-        case OP_POP:
-            jitOpPop();
-            break;
-        case OP_GET_LOCAL: {
-            jitOpGetLocal();
-            break;
-        }
-        case OP_SET_LOCAL: {
-            jitOpSetLocal();
-            break;
-        }
-        case OP_GET_GLOBAL: {
-            jitOpGetGlobal();
-            break;
-        }
-        case OP_DEFINE_GLOBAL: {
-            jitOpDefineGlobal();
-            break;
-        }
-        case OP_SET_GLOBAL: {
-            jitOpSetGlobal();
-            break;
-        }
-        case OP_GET_UPVALUE: {
-            jitOpGetUpvalue();
-            break;
-        }
-        case OP_SET_UPVALUE: {
-            jitOpSetUpvalue();
-            break;
-        }
-        case OP_GET_PROPERTY: {
-            jitOpGetProperty();
-            break;
-        }
-        case OP_SET_PROPERTY: {
-            jitOpSetProperty();
-            break;
-        }
-        case OP_GET_SUPER: {
-            jitOpGetSuper();
-            break;
-        }
-        case OP_EQUAL: {
-            jitOpEqual();
-            break;
-        }
-        case OP_GREATER:
-            jitOpGreater();
-            break;
-        case OP_LESS:
-            jitOpLess();
-            break;
-        case OP_ADD: {
-            jitOpAdd();
-            break;
-        }
-        case OP_SUBTRACT:
-            jitOpSubtract();
-            break;
-        case OP_MULTIPLY:
-            jitOpMultiply();
-            break;
-        case OP_DIVIDE:
-            jitOpDivide();
-            break;
-        case OP_NOT:
-            jitOpNot();
-            break;
-        case OP_NEGATE:
-            jitOpNegate();
-            break;
-        case OP_PRINT: {
-            jitOpPrint(state);
-            break;
-        }
-        case OP_JUMP: {
-            jitOpJump();
-            break;
-        }
-        case OP_JUMP_IF_FALSE: {
-            jitOpJumpIfFalse();
-            break;
-        }
-        case OP_LOOP: {
-            jitOpLoop();
-            break;
-        }
-        case OP_CALL: {
-            jitOpCall();
-            break;
-        }
-        case OP_INVOKE: {
-            jitOpInvoke();
-            break;
-        }
-        case OP_SUPER_INVOKE: {
-            jitOpSuperInvoke();
-            break;
-        }
-        case OP_CLOSURE: {
-            jitOpClosure();
-            break;
-        }
-        case OP_CLOSE_UPVALUE:
-            jitOpCloseUpvalue();
-            break;
-        case OP_RETURN: {
-            jitOpReutrn(state);
-            break;
-        }
-        case OP_CLASS:
-            jitOpClass();
-            break;
-        case OP_INHERIT: {
-            jitOpInherit();
-            break;
-        }
-        case OP_METHOD:
-            jitOpMethod();
-            break;
-        }
-    }
+     for (size_t i = 0; i < codeCount; i++) {
+         uint8_t opcode = codes[i];
+         switch (opcode) {
+         case OP_CONSTANT:
+             jitOpConstant(state, closure, &i);
+             break;
+         case OP_NIL:
+             jitOpNil(state);
+             break;
+         case OP_TRUE:
+             jitOpTrue();
+             break;
+         case OP_FALSE:
+             jitOpFalse();
+             break;
+         case OP_POP:
+             jitOpPop();
+             break;
+         case OP_GET_LOCAL: {
+             jitOpGetLocal();
+             break;
+         }
+         case OP_SET_LOCAL: {
+             jitOpSetLocal();
+             break;
+         }
+         case OP_GET_GLOBAL: {
+             jitOpGetGlobal();
+             break;
+         }
+         case OP_DEFINE_GLOBAL: {
+             jitOpDefineGlobal();
+             break;
+         }
+         case OP_SET_GLOBAL: {
+             jitOpSetGlobal();
+             break;
+         }
+         case OP_GET_UPVALUE: {
+             jitOpGetUpvalue();
+             break;
+         }
+         case OP_SET_UPVALUE: {
+             jitOpSetUpvalue();
+             break;
+         }
+         case OP_GET_PROPERTY: {
+             jitOpGetProperty();
+             break;
+         }
+         case OP_SET_PROPERTY: {
+             jitOpSetProperty();
+             break;
+         }
+         case OP_GET_SUPER: {
+             jitOpGetSuper();
+             break;
+         }
+         case OP_EQUAL: {
+             jitOpEqual();
+             break;
+         }
+         case OP_GREATER:
+             jitOpGreater();
+             break;
+         case OP_LESS:
+             jitOpLess();
+             break;
+         case OP_ADD: {
+             jitOpAdd();
+             break;
+         }
+         case OP_SUBTRACT:
+             jitOpSubtract();
+             break;
+         case OP_MULTIPLY:
+             jitOpMultiply();
+             break;
+         case OP_DIVIDE:
+             jitOpDivide();
+             break;
+         case OP_NOT:
+             jitOpNot();
+             break;
+         case OP_NEGATE:
+             jitOpNegate();
+             break;
+         case OP_PRINT: {
+             jitOpPrint(state);
+             break;
+         }
+         case OP_JUMP: {
+             jitOpJump();
+             break;
+         }
+         case OP_JUMP_IF_FALSE: {
+             jitOpJumpIfFalse();
+             break;
+         }
+         case OP_LOOP: {
+             jitOpLoop();
+             break;
+         }
+         case OP_CALL: {
+             jitOpCall();
+             break;
+         }
+         case OP_INVOKE: {
+             jitOpInvoke();
+             break;
+         }
+         case OP_SUPER_INVOKE: {
+             jitOpSuperInvoke();
+             break;
+         }
+         case OP_CLOSURE: {
+             jitOpClosure();
+             break;
+         }
+         case OP_CLOSE_UPVALUE:
+             jitOpCloseUpvalue();
+             break;
+         case OP_RETURN: {
+             jitOpReutrn(state);
+             break;
+         }
+         case OP_CLASS:
+             jitOpClass();
+             break;
+         case OP_INHERIT: {
+             jitOpInherit();
+             break;
+         }
+         case OP_METHOD:
+             jitOpMethod();
+             break;
+         }
+     }
 
-    
     return jitCode(Dst);
 }
 
@@ -195,6 +198,19 @@ static void *jitCode(Dst_DECL) {
 
     int success = mprotect(mem, size, PROT_EXEC | PROT_READ);
     assert(success == 0);
+
+
+#define JIT_DEBUG
+#ifdef JIT_DEBUG
+  // Write generated machine code to a temporary file.
+  // View with:
+  //  objdump -D -b binary -mi386 -Mx86-64 /tmp/jitcode
+  // Or:
+  //  ndisasm -b 64 /tmp/jitcode
+    FILE *f = fopen("/tmp/jitcode", "wb");
+    fwrite(ret, size, 1, f);
+    fclose(f);
+#endif
 
     return ret;
 }

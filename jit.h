@@ -9,11 +9,11 @@ typedef struct dasm_State dasm_State;
 #define Dst_DECL JitState *J
 #define Dst_REF (J->D)
 
+
 typedef struct {
     dasm_State *D;
     void ** jgbl;
     ObjClosure *closure;
-    Value *tmp;
 } JitState;
 
 void *jitCompile(ObjClosure *closure);

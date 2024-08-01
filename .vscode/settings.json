@@ -24,7 +24,9 @@
         "jit.h": "c",
         "dasm_proto.h": "c",
         "random": "c",
-        "value.h": "c"
+        "value.h": "c",
+        "vm.h": "c"
     },
-    "commentTranslate.hover.enabled": false
+    "commentTranslate.hover.enabled": true,
+    "commentTranslate.source": "Bing"
 }

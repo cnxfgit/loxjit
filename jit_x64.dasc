@@ -8,7 +8,9 @@
 |.type CF,		 CallFrame, r13	    // VM->frames[VM->frameCount-1]
 |.type JS,       JitState, r12      // VM->J
 |.type CLOSURE,	 ObjClosure, rbx	// CallFrame->closure
- 
+
+|.define TMP1,   r10
+|.define TMP2,   r11
 
 |.type VALUE,	    Value
 |.type CFRAME,		CallFrame
@@ -24,14 +26,14 @@
 |.type TABLE,		Table
 |.type ENTRY,		Entry
 
-|.define LUA_OBJ_BOUND_METHOD,  0
-|.define LUA_OBJ_CLASS,		    1
-|.define LUA_OBJ_CLOSURE,       2
-|.define LUA_OBJ_FUNCTION,		3
-|.define LUA_OBJ_INSTANCE,		4
-|.define LUA_OBJ_NATIVE,		5
-|.define LUA_OBJ_STRING,		6
-|.define LUA_OBJ_UPVALUE,		7
+|.define LOX_OBJ_BOUND_METHOD,  0
+|.define LOX_OBJ_CLASS,		    1
+|.define LOX_OBJ_CLOSURE,       2
+|.define LOX_OBJ_FUNCTION,		3
+|.define LOX_OBJ_INSTANCE,		4
+|.define LOX_OBJ_NATIVE,		5
+|.define LOX_OBJ_STRING,		6
+|.define LOX_OBJ_UPVALUE,		7
 
 |.define CARG1,		rdi		// x64/POSIX C call arguments.
 |.define CARG2,		rsi
@@ -45,19 +47,30 @@
 |  call rax
 |.endmacro
 
+|.macro subfc1
+|  mov64 rax, (ptrdiff_t)(&vm.frameCount)
+|  sub dword [rax], 1
+|.endmacro
+
 
 |.actionlist actionList
 |.globals jitGlobal_
 
 const char loxJIT_arch[] = "x64";
 
+static void debugger() {
+    static int num = 0;
+    num++;
+    printf("debugger:%d\n", num);
+}
+
 // 要保证栈对齐 16字节 即除rbp外，push reg要成对出现，否则会造成Segmentation fault (core dumped)
 static void preCall(Dst_DECL) {
-    |.align 16
+    |.code
     |->main:
     | push rbp
     | mov  rbp, rsp
-    | push rax
+    | push rbx
     | push rbx
     | push r12
     | push r13
@@ -65,19 +78,24 @@ static void preCall(Dst_DECL) {
     | push r15
     | mov JS, CARG1
     | mov64 VM, (ptrdiff_t)&vm
-    | mov CF, VM->frames
+    | mov eax, VM->frameCount
+    | sub eax, 1
+    | mov TMP1, sizeof(CallFrame)
+    | mul TMP1
+    | mov TMP2, VM->frames
+    | add TMP2, rax
+    | mov CF, TMP2
+    | mov TOP, VM->stackTop
 }
 
 static void jitOpConstant(dasm_State *state, ObjClosure *closure, size_t* i) {
     Value constant = closure->function->chunk.constants.values[*i];
     (*i)++;
-    |.align 16
     | mov64 CARG1, (ptrdiff_t)constant
     | call64 push
 }
 
 static void jitOpNil(dasm_State *state) {
-    |.align 16
     | mov64 CARG1, (ptrdiff_t)NIL_VAL
     | call64 push
 }
@@ -127,10 +145,9 @@ static void jitOpNot() {}
 static void jitOpNegate() {}
 
 static void jitOpPrint(dasm_State *state) {
-    |.align 16
     | call64 pop
     | mov CARG1, rax
-    | call64 (ptrdiff_t)printValue
+    | call64 printValue
     | mov CARG1, '\n'
     | call64 putchar
 }
@@ -151,22 +168,39 @@ static void jitOpClosure() {}
 
 static void jitOpCloseUpvalue() {}
 
-    //| sub rax, 1
-    //| mov CARG1, CF->slots
-    //| call64 closeUpvalues
-
 static void jitOpReutrn(dasm_State *state) {
     | call64 pop
+    | mov TMP1, rax
+    | mov CARG1, CF->slots
+    | call64 closeUpvalues
+    | subfc1
+    | mov eax, VM->frameCount
+    | test eax, eax
+    | jz >1
+    | jmp >2
+    |1:
+    | call64 pop
+    | mov rax, 0
+    | jmp >3
+    |2:
+    | mov TMP2, CF->slots
+    | mov VM->stackTop, TMP2
+    | mov CARG1, TMP1
+    | call64 push
+    | mov TMP2, VM->frames
     | mov eax, VM->frameCount
     | sub eax, 1
-    | 
-    |1:
-    | pop rbx
-    | pop rax
+    | mov TMP1, sizeof(CallFrame)
+    | mul TMP1
+    | add TMP2, rax
+    | mov CF, TMP2
+    |3:
     | pop r15
     | pop r14
     | pop r13
     | pop r12
+    | pop rbx
+    | pop rbx
     | pop rbp
     | ret 
 }
