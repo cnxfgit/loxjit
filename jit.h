@@ -14,6 +14,7 @@ typedef struct {
     dasm_State *D;
     void ** jgbl;
     ObjClosure *closure;
+    Value value;
 } JitState;
 
 void *jitCompile(ObjClosure *closure);

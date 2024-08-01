@@ -71,4 +71,6 @@ Value pop();
 
 void closeUpvalues(Value *last);
 
+Value peek(int distance);
+
 #endif

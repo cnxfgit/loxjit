@@ -88,14 +88,15 @@ static void preCall(Dst_DECL) {
     | mov TOP, VM->stackTop
 }
 
-static void jitOpConstant(dasm_State *state, ObjClosure *closure, size_t* i) {
-    Value constant = closure->function->chunk.constants.values[*i];
+static void jitOpConstant(Dst_DECL, size_t* i) {
     (*i)++;
+    uint8_t idx = J->closure->function->chunk.code[*i];
+    Value constant = J->closure->function->chunk.constants.values[idx];
     | mov64 CARG1, (ptrdiff_t)constant
     | call64 push
 }
 
-static void jitOpNil(dasm_State *state) {
+static void jitOpNil(Dst_DECL) {
     | mov64 CARG1, (ptrdiff_t)NIL_VAL
     | call64 push
 }
@@ -112,9 +113,30 @@ static void jitOpSetLocal() {}
 
 static void jitOpGetGlobal() {}
 
-static void jitOpDefineGlobal() {}
+static void jitOpDefineGlobal(Dst_DECL, size_t* i) {
+    (*i)++;
+    uint8_t idx = J->closure->function->chunk.code[*i];
+    ObjString *name = AS_STRING(J->closure->function->chunk.constants.values[idx]);
+    | mov CARG1, 0
+    | call64 peek
+    | mov64 CARG1, (ptrdiff_t)&vm.globals
+    | mov64 CARG2, (ptrdiff_t)name
+    | mov CARG3, rax
+    | call64 tableSet
+    | call64 pop
+}
 
-static void jitOpSetGlobal() {}
+static void jitOpSetGlobal(Dst_DECL, size_t* i) {
+    ObjString *name = AS_STRING(J->closure->function->chunk.constants.values[*i]);
+    (*i)++;
+    | mov CARG1, 0
+    | call64 peek
+    | mov CARG1, VM->globals
+    | mov64 CARG2, (ptrdiff_t)name
+    | mov CARG3, rax
+    | call64 tableSet
+    | call64 pop
+}
 
 static void jitOpGetUpvalue() {}
 
@@ -144,7 +166,7 @@ static void jitOpNot() {}
 
 static void jitOpNegate() {}
 
-static void jitOpPrint(dasm_State *state) {
+static void jitOpPrint(Dst_DECL) {
     | call64 pop
     | mov CARG1, rax
     | call64 printValue
@@ -168,7 +190,7 @@ static void jitOpClosure() {}
 
 static void jitOpCloseUpvalue() {}
 
-static void jitOpReutrn(dasm_State *state) {
+static void jitOpReutrn(Dst_DECL) {
     | call64 pop
     | mov TMP1, rax
     | mov CARG1, CF->slots

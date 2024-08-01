@@ -107,7 +107,7 @@ Value pop() {
 }
 
 // 查看栈中的值但是不弹出 peek(0)为栈顶
-static Value peek(int distance) { return vm.stackTop[-1 - distance]; }
+Value peek(int distance) { return vm.stackTop[-1 - distance]; }
 
 // 执行
 static bool call(ObjClosure *closure, int argCount) {
