@@ -25,7 +25,8 @@
         "dasm_proto.h": "c",
         "random": "c",
         "value.h": "c",
-        "vm.h": "c"
+        "vm.h": "c",
+        "chrono": "c"
     },
     "commentTranslate.hover.enabled": true,
     "commentTranslate.source": "Bing"

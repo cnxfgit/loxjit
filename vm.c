@@ -262,7 +262,7 @@ static void defineMethod(ObjString *name) {
 }
 
 // 是否为false 只要不为空或者布尔false都是true
-static bool isFalsey(Value value) {
+bool isFalsey(Value value) {
     return IS_NIL(value) || (IS_BOOL(value) && !AS_BOOL(value));
 }
 

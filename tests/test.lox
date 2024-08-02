@@ -1,4 +1,10 @@
-var a = 555;
-print(666);
-b = 123;
-print(a);
+//var a = 555;
+//print(666);
+//a = 123;
+//print(a);
+
+if (true) {
+    print(77777);
+} else {
+    print(88888);
+}

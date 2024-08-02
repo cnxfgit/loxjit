@@ -90,6 +90,10 @@ static void preCall(Dst_DECL) {
 
 static char message[] = "Undefined variable '%s'.";
 
+void setJmpTarget(size_t target) {
+    |=>(target):
+}
+
 static void jitOpConstant(Dst_DECL, size_t* i) {
     (*i)++;
     uint8_t idx = J->closure->function->chunk.code[*i];
@@ -103,11 +107,19 @@ static void jitOpNil(Dst_DECL) {
     | call64 push
 }
 
-static void jitOpTrue() {}
+static void jitOpTrue(Dst_DECL) {
+    | mov64 CARG1, (ptrdiff_t)BOOL_VAL(true)
+    | call64 push
+}
 
-static void jitOpFalse() {}
+static void jitOpFalse(Dst_DECL) {
+    | mov64 CARG1, (ptrdiff_t)BOOL_VAL(false)
+    | call64 push
+}
 
-static void jitOpPop() {}
+static void jitOpPop(Dst_DECL) {
+    | call64 pop
+}
 
 static void jitOpGetLocal() {}
 
@@ -208,9 +220,27 @@ static void jitOpPrint(Dst_DECL) {
     | call64 putchar
 }
 
-static void jitOpJump() {}
+static void jitOpJump(Dst_DECL, size_t* i) {
+    // 跳转距离在后面两个字节里, 距离是opcode数，在dasc中要再做转化
+    (*i)+=2;
+    uint8_t *code = J->closure->function->chunk.code;
+    uint16_t offset = (uint16_t)((code[*i-1] << 8) | code[*i]);
+    | jmp =>(*i+offset+1) 
+}
 
-static void jitOpJumpIfFalse() {}
+static void jitOpJumpIfFalse(Dst_DECL, size_t* i) {
+    (*i)+=2;
+    uint8_t *code = J->closure->function->chunk.code;
+    uint16_t offset = (uint16_t)((code[*i-1] << 8) | code[*i]);
+    | mov CARG1, 0
+    | call64 peek
+    | mov CARG1, rax
+    | call64 isFalsey
+    | test rax, rax
+    | jz >1
+    | jmp =>(*i+offset+1)  
+    |1:
+}
 
 static void jitOpLoop() {}
 

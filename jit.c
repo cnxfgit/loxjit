@@ -18,6 +18,29 @@ static void initJit(Dst_DECL, const void *actionList) {
     dasm_setup(Dst, actionList);
 }
 
+static void setJmps(uint8_t *codes, int codeCount, uint8_t *isJmps) {
+    for (int pc = 0; pc < codeCount; pc++) {
+        uint8_t instruction = codes[pc];
+        switch (instruction) {
+        case OP_JUMP:
+        case OP_JUMP_IF_FALSE: {
+            uint16_t offset = (uint16_t)((codes[pc + 1] << 8) | codes[pc + 2]);
+            pc += 2;
+            isJmps[pc + offset + 1] = 1;
+            break;
+        }
+        case OP_LOOP: {
+            uint16_t offset = (uint16_t)((codes[pc + 1] << 8) | codes[pc + 2]);
+            pc += 2;
+            isJmps[pc - offset + 1] = 1;
+            break;
+        }
+        default:
+            break;
+        }
+    }
+}
+
 void *jitCompile(ObjClosure *closure) {
     vm.J->closure = closure;
     // dasm_State *state;
@@ -33,10 +56,18 @@ void *jitCompile(ObjClosure *closure) {
     uint8_t *codes = closure->function->chunk.code;
     int codeCount = closure->function->chunk.count;
 
-    dasm_growpc(Dst, 20);
+    uint8_t *isJmps = malloc(codeCount * sizeof(uint8_t));
+    memset(isJmps, 0, codeCount * sizeof(uint8_t));
+    setJmps(codes, codeCount, isJmps);
+
+    dasm_growpc(Dst, codeCount + 3);
 
     preCall(Dst);
     for (size_t i = 0; i < codeCount; i++) {
+        if (isJmps[i]) {
+            setJmpTarget(i);
+        }
+
         uint8_t opcode = codes[i];
         switch (opcode) {
         case OP_CONSTANT:
@@ -46,13 +77,13 @@ void *jitCompile(ObjClosure *closure) {
             jitOpNil(Dst);
             break;
         case OP_TRUE:
-            jitOpTrue();
+            jitOpTrue(Dst);
             break;
         case OP_FALSE:
-            jitOpFalse();
+            jitOpFalse(Dst);
             break;
         case OP_POP:
-            jitOpPop();
+            jitOpPop(Dst);
             break;
         case OP_GET_LOCAL: {
             jitOpGetLocal();
@@ -128,11 +159,11 @@ void *jitCompile(ObjClosure *closure) {
             break;
         }
         case OP_JUMP: {
-            jitOpJump();
+            jitOpJump(Dst, &i);
             break;
         }
         case OP_JUMP_IF_FALSE: {
-            jitOpJumpIfFalse();
+            jitOpJumpIfFalse(Dst, &i);
             break;
         }
         case OP_LOOP: {

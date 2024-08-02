@@ -75,4 +75,6 @@ Value peek(int distance);
 
 void runtimeError(const char *format, ...);
 
+bool isFalsey(Value value);
+
 #endif
