@@ -63,7 +63,7 @@ void *jitCompile(ObjClosure *closure) {
             break;
         }
         case OP_GET_GLOBAL: {
-            jitOpGetGlobal();
+            jitOpGetGlobal(Dst, &i);
             break;
         }
         case OP_DEFINE_GLOBAL: {
@@ -199,7 +199,7 @@ static void *jitCode(Dst_DECL) {
     int success = mprotect(mem, size, PROT_EXEC | PROT_READ);
     assert(success == 0);
 
-//#define JIT_DEBUG
+#define JIT_DEBUG
 #ifdef JIT_DEBUG
     // Write generated machine code to a temporary file.
     // View with:

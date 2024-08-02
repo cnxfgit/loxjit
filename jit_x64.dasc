@@ -111,7 +111,29 @@ static void jitOpGetLocal() {}
 
 static void jitOpSetLocal() {}
 
-static void jitOpGetGlobal() {}
+static void jitOpGetGlobal(Dst_DECL, size_t* i) {
+    static char message[] = "Undefined variable '%s'.";
+
+    (*i)++;
+    uint8_t idx = J->closure->function->chunk.code[*i];
+    ObjString *name = AS_STRING(J->closure->function->chunk.constants.values[idx]);
+    | mov64 CARG1, (ptrdiff_t)&vm.globals
+    | mov64 CARG2, (ptrdiff_t)name
+    | mov64 CARG3, (ptrdiff_t)&J->value
+    | call64 tableGet
+    | test rax, rax
+    | jz >1
+    | jmp >2 
+    |1:
+    | mov64 CARG1, (ptrdiff_t)&message 
+    | mov64 CARG2, (ptrdiff_t)name->chars
+    | call64 runtimeError
+    | mov CARG1, 2
+    | jmp ->return
+    |2:
+    | mov CARG1, JS->value
+    | call64 push
+}
 
 static void jitOpDefineGlobal(Dst_DECL, size_t* i) {
     (*i)++;
@@ -217,6 +239,7 @@ static void jitOpReutrn(Dst_DECL) {
     | add TMP2, rax
     | mov CF, TMP2
     |3:
+    |->return:
     | pop r15
     | pop r14
     | pop r13
@@ -224,6 +247,7 @@ static void jitOpReutrn(Dst_DECL) {
     | pop rbx
     | pop rbx
     | pop rbp
+    | mov rax, 0
     | ret 
 }
 

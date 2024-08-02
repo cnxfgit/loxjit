@@ -73,4 +73,6 @@ void closeUpvalues(Value *last);
 
 Value peek(int distance);
 
+void runtimeError(const char *format, ...);
+
 #endif

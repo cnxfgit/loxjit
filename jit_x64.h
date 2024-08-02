@@ -40,26 +40,31 @@
 
 
 
-static const unsigned char actionList[300] = {
+static const unsigned char actionList[384] = {
   254,0,248,10,85,72,137,229,83,83,65,84,65,85,65,86,65,87,73,137,252,252,73,
   191,237,237,65,139,135,233,131,232,1,73,199,194,237,73,252,247,226,77,139,
   159,233,73,1,195,77,137,221,77,139,183,233,255,72,191,237,237,72,184,237,
-  237,252,255,208,255,72,199,199,0,0,0,0,72,184,237,237,252,255,208,72,191,
-  237,237,72,190,237,237,72,137,194,72,184,237,237,252,255,208,72,184,237,237,
-  252,255,208,255,72,199,199,0,0,0,0,72,184,237,237,252,255,208,73,139,191,
-  233,72,190,237,237,72,137,194,72,184,237,237,252,255,208,72,184,237,237,252,
-  255,208,255,72,184,237,237,252,255,208,72,137,199,72,184,237,237,252,255,
-  208,72,199,199,237,72,184,237,237,252,255,208,255,72,184,237,237,252,255,
-  208,73,137,194,73,139,189,233,72,184,237,237,252,255,208,72,184,237,237,131,
-  40,1,65,139,135,233,133,192,15,132,244,247,252,233,244,248,248,1,72,184,237,
-  237,252,255,208,72,199,192,0,0,0,0,252,233,244,249,248,2,77,139,157,233,77,
-  137,159,233,255,76,137,215,72,184,237,237,252,255,208,77,139,159,233,65,139,
-  135,233,131,232,1,73,199,194,237,73,252,247,226,73,1,195,77,137,221,248,3,
-  65,95,65,94,65,93,65,92,91,91,93,195,255
+  237,252,255,208,255,72,191,237,237,72,190,237,237,72,186,237,237,72,184,237,
+  237,252,255,208,72,133,192,15,132,244,247,252,233,244,248,248,1,72,191,237,
+  237,72,190,237,237,72,184,237,237,252,255,208,72,199,199,2,0,0,0,252,233,
+  244,11,248,2,255,73,139,188,253,36,233,72,184,237,237,252,255,208,255,72,
+  199,199,0,0,0,0,72,184,237,237,252,255,208,72,191,237,237,72,190,237,237,
+  72,137,194,72,184,237,237,252,255,208,72,184,237,237,252,255,208,255,72,199,
+  199,0,0,0,0,72,184,237,237,252,255,208,73,139,191,233,72,190,237,237,72,137,
+  194,72,184,237,237,252,255,208,72,184,237,237,252,255,208,255,72,184,237,
+  237,252,255,208,72,137,199,72,184,237,237,252,255,208,72,199,199,237,72,184,
+  237,237,252,255,208,255,72,184,237,237,252,255,208,73,137,194,73,139,189,
+  233,72,184,237,237,252,255,208,72,184,237,237,131,40,1,65,139,135,233,133,
+  192,15,132,244,247,252,233,244,248,248,1,72,184,237,237,252,255,208,72,199,
+  192,0,0,0,0,252,233,244,249,248,2,77,139,157,233,77,137,159,233,255,76,137,
+  215,72,184,237,237,252,255,208,77,139,159,233,65,139,135,233,131,232,1,73,
+  199,194,237,73,252,247,226,73,1,195,77,137,221,248,3,248,11,65,95,65,94,65,
+  93,65,92,91,91,93,72,199,192,0,0,0,0,195,255
 };
 
 enum {
   jitGlobal_main,
+  jitGlobal_return,
   jitGlobal__MAX
 };
 
@@ -98,19 +103,27 @@ static void jitOpGetLocal() {}
 
 static void jitOpSetLocal() {}
 
-static void jitOpGetGlobal() {}
+static void jitOpGetGlobal(Dst_DECL, size_t* i) {
+    static char message[] = "Undefined variable '%s'.";
+
+    (*i)++;
+    uint8_t idx = J->closure->function->chunk.code[*i];
+    ObjString *name = AS_STRING(J->closure->function->chunk.constants.values[idx]);
+    dasm_put(Dst, 68, (unsigned int)((ptrdiff_t)&vm.globals), (unsigned int)(((ptrdiff_t)&vm.globals)>>32), (unsigned int)((ptrdiff_t)name), (unsigned int)(((ptrdiff_t)name)>>32), (unsigned int)((ptrdiff_t)&J->value), (unsigned int)(((ptrdiff_t)&J->value)>>32), (unsigned int)((ptrdiff_t)tableGet), (unsigned int)(((ptrdiff_t)tableGet)>>32), (unsigned int)((ptrdiff_t)&message), (unsigned int)(((ptrdiff_t)&message)>>32), (unsigned int)((ptrdiff_t)name->chars), (unsigned int)(((ptrdiff_t)name->chars)>>32), (unsigned int)((ptrdiff_t)runtimeError), (unsigned int)(((ptrdiff_t)runtimeError)>>32));
+    dasm_put(Dst, 129, Dt4(->value), (unsigned int)((ptrdiff_t)push), (unsigned int)(((ptrdiff_t)push)>>32));
+}
 
 static void jitOpDefineGlobal(Dst_DECL, size_t* i) {
     (*i)++;
     uint8_t idx = J->closure->function->chunk.code[*i];
     ObjString *name = AS_STRING(J->closure->function->chunk.constants.values[idx]);
-    dasm_put(Dst, 68, (unsigned int)((ptrdiff_t)peek), (unsigned int)(((ptrdiff_t)peek)>>32), (unsigned int)((ptrdiff_t)&vm.globals), (unsigned int)(((ptrdiff_t)&vm.globals)>>32), (unsigned int)((ptrdiff_t)name), (unsigned int)(((ptrdiff_t)name)>>32), (unsigned int)((ptrdiff_t)tableSet), (unsigned int)(((ptrdiff_t)tableSet)>>32), (unsigned int)((ptrdiff_t)pop), (unsigned int)(((ptrdiff_t)pop)>>32));
+    dasm_put(Dst, 143, (unsigned int)((ptrdiff_t)peek), (unsigned int)(((ptrdiff_t)peek)>>32), (unsigned int)((ptrdiff_t)&vm.globals), (unsigned int)(((ptrdiff_t)&vm.globals)>>32), (unsigned int)((ptrdiff_t)name), (unsigned int)(((ptrdiff_t)name)>>32), (unsigned int)((ptrdiff_t)tableSet), (unsigned int)(((ptrdiff_t)tableSet)>>32), (unsigned int)((ptrdiff_t)pop), (unsigned int)(((ptrdiff_t)pop)>>32));
 }
 
 static void jitOpSetGlobal(Dst_DECL, size_t* i) {
     ObjString *name = AS_STRING(J->closure->function->chunk.constants.values[*i]);
     (*i)++;
-    dasm_put(Dst, 108, (unsigned int)((ptrdiff_t)peek), (unsigned int)(((ptrdiff_t)peek)>>32), Dt1(->globals), (unsigned int)((ptrdiff_t)name), (unsigned int)(((ptrdiff_t)name)>>32), (unsigned int)((ptrdiff_t)tableSet), (unsigned int)(((ptrdiff_t)tableSet)>>32), (unsigned int)((ptrdiff_t)pop), (unsigned int)(((ptrdiff_t)pop)>>32));
+    dasm_put(Dst, 183, (unsigned int)((ptrdiff_t)peek), (unsigned int)(((ptrdiff_t)peek)>>32), Dt1(->globals), (unsigned int)((ptrdiff_t)name), (unsigned int)(((ptrdiff_t)name)>>32), (unsigned int)((ptrdiff_t)tableSet), (unsigned int)(((ptrdiff_t)tableSet)>>32), (unsigned int)((ptrdiff_t)pop), (unsigned int)(((ptrdiff_t)pop)>>32));
 }
 
 static void jitOpGetUpvalue() {}
@@ -142,7 +155,7 @@ static void jitOpNot() {}
 static void jitOpNegate() {}
 
 static void jitOpPrint(Dst_DECL) {
-    dasm_put(Dst, 148, (unsigned int)((ptrdiff_t)pop), (unsigned int)(((ptrdiff_t)pop)>>32), (unsigned int)((ptrdiff_t)printValue), (unsigned int)(((ptrdiff_t)printValue)>>32), '\n', (unsigned int)((ptrdiff_t)putchar), (unsigned int)(((ptrdiff_t)putchar)>>32));
+    dasm_put(Dst, 223, (unsigned int)((ptrdiff_t)pop), (unsigned int)(((ptrdiff_t)pop)>>32), (unsigned int)((ptrdiff_t)printValue), (unsigned int)(((ptrdiff_t)printValue)>>32), '\n', (unsigned int)((ptrdiff_t)putchar), (unsigned int)(((ptrdiff_t)putchar)>>32));
 }
 
 static void jitOpJump() {}
@@ -162,8 +175,8 @@ static void jitOpClosure() {}
 static void jitOpCloseUpvalue() {}
 
 static void jitOpReutrn(Dst_DECL) {
-    dasm_put(Dst, 177, (unsigned int)((ptrdiff_t)pop), (unsigned int)(((ptrdiff_t)pop)>>32), Dt3(->slots), (unsigned int)((ptrdiff_t)closeUpvalues), (unsigned int)(((ptrdiff_t)closeUpvalues)>>32), (unsigned int)((ptrdiff_t)(&vm.frameCount)), (unsigned int)(((ptrdiff_t)(&vm.frameCount))>>32), Dt1(->frameCount), (unsigned int)((ptrdiff_t)pop), (unsigned int)(((ptrdiff_t)pop)>>32), Dt3(->slots), Dt1(->stackTop));
-    dasm_put(Dst, 250, (unsigned int)((ptrdiff_t)push), (unsigned int)(((ptrdiff_t)push)>>32), Dt1(->frames), Dt1(->frameCount), sizeof(CallFrame));
+    dasm_put(Dst, 252, (unsigned int)((ptrdiff_t)pop), (unsigned int)(((ptrdiff_t)pop)>>32), Dt3(->slots), (unsigned int)((ptrdiff_t)closeUpvalues), (unsigned int)(((ptrdiff_t)closeUpvalues)>>32), (unsigned int)((ptrdiff_t)(&vm.frameCount)), (unsigned int)(((ptrdiff_t)(&vm.frameCount))>>32), Dt1(->frameCount), (unsigned int)((ptrdiff_t)pop), (unsigned int)(((ptrdiff_t)pop)>>32), Dt3(->slots), Dt1(->stackTop));
+    dasm_put(Dst, 325, (unsigned int)((ptrdiff_t)push), (unsigned int)(((ptrdiff_t)push)>>32), Dt1(->frames), Dt1(->frameCount), sizeof(CallFrame));
 }
 
 static void jitOpClass() {}

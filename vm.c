@@ -32,7 +32,7 @@ static void resetStack() {
 }
 
 // 运行时异常
-static void runtimeError(const char *format, ...) {
+void runtimeError(const char *format, ...) {
     va_list args;
     va_start(args, format);
     vfprintf(stderr, format, args);
