@@ -88,6 +88,8 @@ static void preCall(Dst_DECL) {
     | mov TOP, VM->stackTop
 }
 
+static char message[] = "Undefined variable '%s'.";
+
 static void jitOpConstant(Dst_DECL, size_t* i) {
     (*i)++;
     uint8_t idx = J->closure->function->chunk.code[*i];
@@ -112,8 +114,6 @@ static void jitOpGetLocal() {}
 static void jitOpSetLocal() {}
 
 static void jitOpGetGlobal(Dst_DECL, size_t* i) {
-    static char message[] = "Undefined variable '%s'.";
-
     (*i)++;
     uint8_t idx = J->closure->function->chunk.code[*i];
     ObjString *name = AS_STRING(J->closure->function->chunk.constants.values[idx]);
@@ -149,15 +149,27 @@ static void jitOpDefineGlobal(Dst_DECL, size_t* i) {
 }
 
 static void jitOpSetGlobal(Dst_DECL, size_t* i) {
-    ObjString *name = AS_STRING(J->closure->function->chunk.constants.values[*i]);
     (*i)++;
+    uint8_t idx = J->closure->function->chunk.code[*i];
+    ObjString *name = AS_STRING(J->closure->function->chunk.constants.values[idx]);
     | mov CARG1, 0
     | call64 peek
-    | mov CARG1, VM->globals
+    | mov64 CARG1, (ptrdiff_t)&vm.globals
     | mov64 CARG2, (ptrdiff_t)name
     | mov CARG3, rax
     | call64 tableSet
-    | call64 pop
+    | test rax, rax
+    | jz >1
+    |
+    | mov64 CARG1, (ptrdiff_t)&vm.globals
+    | mov64 CARG2, (ptrdiff_t)name
+    | call64 tableDelete
+    | mov64 CARG1, (ptrdiff_t)&message 
+    | mov64 CARG2, (ptrdiff_t)name->chars
+    | call64 runtimeError
+    | mov CARG1, 2
+    | jmp ->return
+    |1:
 }
 
 static void jitOpGetUpvalue() {}
