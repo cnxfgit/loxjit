@@ -79,10 +79,11 @@ static void preCall(Dst_DECL) {
     | mov JS, CARG1
     | mov64 VM, (ptrdiff_t)&vm
     | add dword VM->frameCount, 1
-    | mov CF, VM
-    | mov CF, CF[vm.frameCount-1]
+    | mov64 CF, (ptrdiff_t)&vm.frames
     | mov64 TMP1, (ptrdiff_t)(vm.stackTop - (J->closure->function->arity) - 1)
     | mov CF->slots, TMP1
+    | mov64 TMP1, (ptrdiff_t)(J->closure)
+    | mov CF->closure, TMP1
     | mov TOP, VM->stackTop
 }
 
@@ -211,7 +212,13 @@ static void jitOpGreater() {}
 
 static void jitOpLess() {}
 
-static void jitOpAdd() {}
+static void jitOpAdd() {
+    | call64 opAdd
+    | test rax, rax
+    | jz >1
+    | jmp ->return
+    |1:
+}
 
 static void jitOpSubtract() {}
 

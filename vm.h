@@ -77,4 +77,6 @@ void runtimeError(const char *format, ...);
 
 bool isFalsey(Value value);
 
+int opAdd();
+
 #endif

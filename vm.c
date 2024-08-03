@@ -15,7 +15,6 @@
 #include "memory.h"
 #include "object.h"
 #include "vm.h"
-#include "jit.h"
 
 VM vm;
 
@@ -39,6 +38,7 @@ void runtimeError(const char *format, ...) {
     va_end(args);
     fputs("\n", stderr);
 
+#ifndef OPEN_JIT
     for (int i = vm.frameCount - 1; i >= 0; i--) {
         CallFrame *frame = &vm.frames[i];
         ObjFunction *function = frame->closure->function;
@@ -50,6 +50,7 @@ void runtimeError(const char *format, ...) {
             fprintf(stderr, "%s()\n", function->name->chars);
         }
     }
+#endif
     resetStack();
 }
 
@@ -123,9 +124,9 @@ static bool call(ObjClosure *closure, int argCount) {
     }
     // 记录新函数栈帧
 #ifdef OPEN_JIT
-    
+
     if (closure->jitFunc == NULL) {
-        void * func = jitCompile(closure);
+        void *func = jitCompile(closure);
         closure->jitFunc = func;
     }
 
@@ -137,7 +138,6 @@ static bool call(ObjClosure *closure, int argCount) {
     frame->slots = vm.stackTop - argCount - 1;
     return true;
 #endif
-    
 }
 
 // 调用 值类型  仅接受 函数 类 方法
@@ -288,6 +288,21 @@ static void concatenate() {
     pop();
 
     push(OBJ_VAL(result));
+}
+
+int opAdd() {
+    if (IS_STRING(peek(0)) && IS_STRING(peek(1))) {
+        concatenate();
+        return INTERPRET_OK;
+    } else if (IS_NUMBER(peek(0)) && IS_NUMBER(peek(1))) {
+        double b = AS_NUMBER(pop());
+        double a = AS_NUMBER(pop());
+        push(NUMBER_VAL(a + b));
+        return INTERPRET_OK;
+    } else {
+        runtimeError("Operands must be two numbers or two strings.");
+        return INTERPRET_RUNTIME_ERROR;
+    }
 }
 
 // 虚拟机运行时
@@ -605,7 +620,7 @@ InterpretResult interpret(const char *source) {
     ObjClosure *closure = newClosure(function);
     pop();
     push(OBJ_VAL(closure));
-    
+
 #ifdef OPEN_JIT
     return call(closure, 0) ? INTERPRET_OK : INTERPRET_RUNTIME_ERROR;
 #else
