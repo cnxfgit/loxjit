@@ -86,6 +86,8 @@ void initVM() {
     vm.J->D = NULL;
     vm.J->closure = NULL;
     vm.J->jgbl = NULL;
+    vm.J->valTrue = TRUE_VAL;
+    vm.J->valFalse = FALSE_VAL;
 }
 
 void freeVM() {

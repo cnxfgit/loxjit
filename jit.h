@@ -15,6 +15,8 @@ typedef struct {
     void ** jgbl;
     ObjClosure *closure;
     Value value;
+    Value valTrue;
+    Value valFalse;
 } JitState;
 
 void *jitCompile(ObjClosure *closure);

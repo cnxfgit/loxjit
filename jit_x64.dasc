@@ -206,7 +206,23 @@ static void jitOpSetProperty() {}
 
 static void jitOpGetSuper() {}
 
-static void jitOpEqual() {}
+static void jitOpEqual() {
+    | call64 pop
+    | mov TMP1, rax
+    | call64 pop
+    | mov TMP2, rax
+    | mov CARG1, TMP2
+    | mov CARG2, TMP1
+    | call64 valuesEqual
+    | test rax, rax
+    | jz >1
+    | mov CARG1, JS->valTrue
+    | jmp >2
+    |1:
+    | mov CARG1, JS->valFalse
+    |2:
+    | call64 push
+}
 
 static void jitOpGreater() {}
 

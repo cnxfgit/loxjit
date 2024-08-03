@@ -15,5 +15,4 @@
 // 
 // print(a);
 
-var a = "12"+3;
-print(a);
+print(1 ==0 );

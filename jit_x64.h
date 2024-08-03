@@ -40,7 +40,7 @@
 
 
 
-static const unsigned char actionList[531] = {
+static const unsigned char actionList[599] = {
   254,0,248,10,85,72,137,229,83,83,65,84,65,85,65,86,65,87,73,137,252,252,73,
   191,237,237,65,131,135,233,1,73,189,237,237,73,186,237,237,77,137,149,233,
   73,186,237,237,77,137,149,233,77,139,183,233,255,249,255,72,191,237,237,72,
@@ -56,17 +56,21 @@ static const unsigned char actionList[531] = {
   194,72,184,237,237,252,255,208,72,133,192,15,132,244,247,72,191,237,237,72,
   190,237,237,72,184,237,237,252,255,208,72,191,237,237,72,190,237,237,72,184,
   237,237,255,252,255,208,72,199,199,2,0,0,0,252,233,244,11,248,1,255,72,184,
-  237,237,252,255,208,72,133,192,15,132,244,247,252,233,244,11,248,1,255,72,
-  184,237,237,252,255,208,72,137,199,72,184,237,237,252,255,208,72,199,199,
-  237,72,184,237,237,252,255,208,255,252,233,245,255,72,199,199,0,0,0,0,72,
-  184,237,237,252,255,208,72,137,199,72,184,237,237,252,255,208,72,133,192,
-  15,132,244,247,252,233,245,248,1,255,72,184,237,237,252,255,208,73,137,194,
-  73,139,189,233,72,184,237,237,252,255,208,72,184,237,237,131,40,1,65,139,
-  135,233,133,192,15,132,244,247,252,233,244,248,248,1,72,184,237,237,252,255,
-  208,72,199,192,0,0,0,0,252,233,244,249,248,2,77,139,157,233,77,137,159,233,
-  255,76,137,215,72,184,237,237,252,255,208,77,139,159,233,65,139,135,233,131,
-  232,1,73,199,194,237,73,252,247,226,73,1,195,77,137,221,248,3,248,11,65,95,
-  65,94,65,93,65,92,91,91,93,72,199,192,0,0,0,0,195,255
+  237,237,252,255,208,73,137,194,72,184,237,237,252,255,208,73,137,195,76,137,
+  223,76,137,214,72,184,237,237,252,255,208,72,133,192,15,132,244,247,73,139,
+  188,253,36,233,252,233,244,248,248,1,73,139,188,253,36,233,248,2,72,184,237,
+  237,252,255,208,255,72,184,237,237,252,255,208,72,133,192,15,132,244,247,
+  252,233,244,11,248,1,255,72,184,237,237,252,255,208,72,137,199,72,184,237,
+  237,252,255,208,72,199,199,237,72,184,237,237,252,255,208,255,252,233,245,
+  255,72,199,199,0,0,0,0,72,184,237,237,252,255,208,72,137,199,72,184,237,237,
+  252,255,208,72,133,192,15,132,244,247,252,233,245,248,1,255,72,184,237,237,
+  252,255,208,73,137,194,73,139,189,233,72,184,237,237,252,255,208,72,184,237,
+  237,131,40,1,65,139,135,233,133,192,15,132,244,247,252,233,244,248,248,1,
+  72,184,237,237,252,255,208,72,199,192,0,0,0,0,252,233,244,249,248,2,77,139,
+  157,233,77,137,159,233,255,76,137,215,72,184,237,237,252,255,208,77,139,159,
+  233,65,139,135,233,131,232,1,73,199,194,237,73,252,247,226,73,1,195,77,137,
+  221,248,3,248,11,65,95,65,94,65,93,65,92,91,91,93,72,199,192,0,0,0,0,195,
+  255
 };
 
 enum {
@@ -163,14 +167,16 @@ static void jitOpSetProperty() {}
 
 static void jitOpGetSuper() {}
 
-static void jitOpEqual() {}
+static void jitOpEqual() {
+    dasm_put(Dst, 308, (unsigned int)((ptrdiff_t)pop), (unsigned int)(((ptrdiff_t)pop)>>32), (unsigned int)((ptrdiff_t)pop), (unsigned int)(((ptrdiff_t)pop)>>32), (unsigned int)((ptrdiff_t)valuesEqual), (unsigned int)(((ptrdiff_t)valuesEqual)>>32), Dt4(->valTrue), Dt4(->valFalse), (unsigned int)((ptrdiff_t)push), (unsigned int)(((ptrdiff_t)push)>>32));
+}
 
 static void jitOpGreater() {}
 
 static void jitOpLess() {}
 
 static void jitOpAdd() {
-    dasm_put(Dst, 308, (unsigned int)((ptrdiff_t)opAdd), (unsigned int)(((ptrdiff_t)opAdd)>>32));
+    dasm_put(Dst, 376, (unsigned int)((ptrdiff_t)opAdd), (unsigned int)(((ptrdiff_t)opAdd)>>32));
 }
 
 static void jitOpSubtract() {}
@@ -184,7 +190,7 @@ static void jitOpNot() {}
 static void jitOpNegate() {}
 
 static void jitOpPrint(Dst_DECL) {
-    dasm_put(Dst, 329, (unsigned int)((ptrdiff_t)pop), (unsigned int)(((ptrdiff_t)pop)>>32), (unsigned int)((ptrdiff_t)printValue), (unsigned int)(((ptrdiff_t)printValue)>>32), '\n', (unsigned int)((ptrdiff_t)putchar), (unsigned int)(((ptrdiff_t)putchar)>>32));
+    dasm_put(Dst, 397, (unsigned int)((ptrdiff_t)pop), (unsigned int)(((ptrdiff_t)pop)>>32), (unsigned int)((ptrdiff_t)printValue), (unsigned int)(((ptrdiff_t)printValue)>>32), '\n', (unsigned int)((ptrdiff_t)putchar), (unsigned int)(((ptrdiff_t)putchar)>>32));
 }
 
 static void jitOpJump(Dst_DECL, size_t* i) {
@@ -192,14 +198,14 @@ static void jitOpJump(Dst_DECL, size_t* i) {
     (*i)+=2;
     uint8_t *code = J->closure->function->chunk.code;
     uint16_t offset = (uint16_t)((code[*i-1] << 8) | code[*i]);
-    dasm_put(Dst, 358, (*i+offset+1));
+    dasm_put(Dst, 426, (*i+offset+1));
 }
 
 static void jitOpJumpIfFalse(Dst_DECL, size_t* i) {
     (*i)+=2;
     uint8_t *code = J->closure->function->chunk.code;
     uint16_t offset = (uint16_t)((code[*i-1] << 8) | code[*i]);
-    dasm_put(Dst, 362, (unsigned int)((ptrdiff_t)peek), (unsigned int)(((ptrdiff_t)peek)>>32), (unsigned int)((ptrdiff_t)isFalsey), (unsigned int)(((ptrdiff_t)isFalsey)>>32), (*i+offset+1));
+    dasm_put(Dst, 430, (unsigned int)((ptrdiff_t)peek), (unsigned int)(((ptrdiff_t)peek)>>32), (unsigned int)((ptrdiff_t)isFalsey), (unsigned int)(((ptrdiff_t)isFalsey)>>32), (*i+offset+1));
 }
 
 static void jitOpLoop() {}
@@ -215,8 +221,8 @@ static void jitOpClosure() {}
 static void jitOpCloseUpvalue() {}
 
 static void jitOpReutrn(Dst_DECL) {
-    dasm_put(Dst, 399, (unsigned int)((ptrdiff_t)pop), (unsigned int)(((ptrdiff_t)pop)>>32), Dt3(->slots), (unsigned int)((ptrdiff_t)closeUpvalues), (unsigned int)(((ptrdiff_t)closeUpvalues)>>32), (unsigned int)((ptrdiff_t)(&vm.frameCount)), (unsigned int)(((ptrdiff_t)(&vm.frameCount))>>32), Dt1(->frameCount), (unsigned int)((ptrdiff_t)pop), (unsigned int)(((ptrdiff_t)pop)>>32), Dt3(->slots), Dt1(->stackTop));
-    dasm_put(Dst, 472, (unsigned int)((ptrdiff_t)push), (unsigned int)(((ptrdiff_t)push)>>32), Dt1(->frames), Dt1(->frameCount), sizeof(CallFrame));
+    dasm_put(Dst, 467, (unsigned int)((ptrdiff_t)pop), (unsigned int)(((ptrdiff_t)pop)>>32), Dt3(->slots), (unsigned int)((ptrdiff_t)closeUpvalues), (unsigned int)(((ptrdiff_t)closeUpvalues)>>32), (unsigned int)((ptrdiff_t)(&vm.frameCount)), (unsigned int)(((ptrdiff_t)(&vm.frameCount))>>32), Dt1(->frameCount), (unsigned int)((ptrdiff_t)pop), (unsigned int)(((ptrdiff_t)pop)>>32), Dt3(->slots), Dt1(->stackTop));
+    dasm_put(Dst, 540, (unsigned int)((ptrdiff_t)push), (unsigned int)(((ptrdiff_t)push)>>32), Dt1(->frames), Dt1(->frameCount), sizeof(CallFrame));
 }
 
 static void jitOpClass() {}
