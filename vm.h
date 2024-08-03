@@ -91,4 +91,8 @@ int opDivide();
 
 int opNegate();
 
+ObjUpvalue *captureUpvalue(Value *local);
+
+bool callValue(Value callee, int argCount);
+
 #endif

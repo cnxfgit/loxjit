@@ -53,6 +53,27 @@
 |.endmacro
 
 
+|//.define JIT_OPT
+|.macro jpush
+|  mov TMP1, VM->stackTop
+|  mov [TMP1], CARG1
+|  add aword VM->stackTop, #VALUE
+|.endmacro
+
+|.macro jpop
+|  sub aword VM->stackTop, #VALUE
+|  mov TMP1, VM->stackTop
+|  mov rax, [TMP1]
+|.endmacro
+
+|.macro restorecf
+| mov CF, VM
+| mov eax, VM->frameCount
+| sub eax, 1
+| imul eax, #CF
+| add CF, rax
+|.endmacro
+
 |.actionlist actionList
 |.globals jitGlobal_
 
@@ -66,6 +87,7 @@ static void debugger() {
 
 // 要保证栈对齐 16字节 即除rbp外，push reg要成对出现，否则会造成Segmentation fault (core dumped)
 static void preCall(Dst_DECL) {
+    int argCount = (J->closure->function->arity);
     |.code
     |->main:
     | push rbp
@@ -79,10 +101,13 @@ static void preCall(Dst_DECL) {
     | mov JS, CARG1
     | mov64 VM, (ptrdiff_t)&vm
     | add dword VM->frameCount, 1
-    | mov64 CF, (ptrdiff_t)&vm.frames
-    | mov64 TMP1, (ptrdiff_t)(vm.stackTop - (J->closure->function->arity) - 1)
+    | restorecf
+    | mov VALUE:TMP1, VM->stackTop
+    | mov rax, argCount+1
+    | imul rax, #VALUE
+    | sub VALUE:TMP1, rax
     | mov CF->slots, TMP1
-    | mov64 TMP1, (ptrdiff_t)(J->closure)
+    | mov TMP1, JS->closure
     | mov CF->closure, TMP1
     | mov TOP, VM->stackTop
 }
@@ -98,26 +123,46 @@ static void jitOpConstant(Dst_DECL, size_t* i) {
     uint8_t idx = J->closure->function->chunk.code[*i];
     Value constant = J->closure->function->chunk.constants.values[idx];
     | mov64 CARG1, (ptrdiff_t)constant
+    |.if JIT_OPT
+    | jpush
+    |.else
     | call64 push
+    |.endif
 }
 
 static void jitOpNil(Dst_DECL) {
     | mov64 CARG1, (ptrdiff_t)NIL_VAL
+    |.if JIT_OPT
+    | jpush
+    |.else
     | call64 push
+    |.endif
 }
 
 static void jitOpTrue(Dst_DECL) {
     | mov64 CARG1, (ptrdiff_t)BOOL_VAL(true)
+    |.if JIT_OPT
+    | jpush
+    |.else
     | call64 push
+    |.endif
 }
 
 static void jitOpFalse(Dst_DECL) {
     | mov64 CARG1, (ptrdiff_t)BOOL_VAL(false)
+    |.if JIT_OPT
+    | jpush
+    |.else
     | call64 push
+    |.endif
 }
 
 static void jitOpPop(Dst_DECL) {
+    |.if JIT_OPT
+    | jpop
+    |.else 
     | call64 pop
+    |.endif
 }
 
 static void jitOpGetLocal(Dst_DECL, size_t* i) {
@@ -125,7 +170,11 @@ static void jitOpGetLocal(Dst_DECL, size_t* i) {
     uint8_t slot = J->closure->function->chunk.code[*i];
     | mov VALUE:TMP1, CF->slots
     | mov CARG1, VALUE:TMP1[slot]
+    |.if JIT_OPT
+    | jpush
+    |.else
     | call64 push
+    |.endif
 }
 
 static void jitOpSetLocal(Dst_DECL, size_t* i) {
@@ -152,11 +201,15 @@ static void jitOpGetGlobal(Dst_DECL, size_t* i) {
     | mov64 CARG1, (ptrdiff_t)&message 
     | mov64 CARG2, (ptrdiff_t)name->chars
     | call64 runtimeError
-    | mov CARG1, 2
+    | mov rax, 0
     | jmp ->return
     |2:
     | mov CARG1, JS->value
+    |.if JIT_OPT
+    | jpush
+    |.else
     | call64 push
+    |.endif
 }
 
 static void jitOpDefineGlobal(Dst_DECL, size_t* i) {
@@ -169,7 +222,11 @@ static void jitOpDefineGlobal(Dst_DECL, size_t* i) {
     | mov64 CARG2, (ptrdiff_t)name
     | mov CARG3, rax
     | call64 tableSet
+    |.if JIT_OPT
+    | jpop
+    |.else 
     | call64 pop
+    |.endif
 }
 
 static void jitOpSetGlobal(Dst_DECL, size_t* i) {
@@ -191,7 +248,7 @@ static void jitOpSetGlobal(Dst_DECL, size_t* i) {
     | mov64 CARG1, (ptrdiff_t)&message 
     | mov64 CARG2, (ptrdiff_t)name->chars
     | call64 runtimeError
-    | mov CARG1, 2
+    | mov rax, 0
     | jmp ->return
     |1:
 }
@@ -207,9 +264,17 @@ static void jitOpSetProperty() {}
 static void jitOpGetSuper() {}
 
 static void jitOpEqual() {
+    |.if JIT_OPT
+    | jpop
+    |.else 
     | call64 pop
+    |.endif
     | mov TMP1, rax
+    |.if JIT_OPT
+    | jpop
+    |.else 
     | call64 pop
+    |.endif
     | mov TMP2, rax
     | mov CARG1, TMP2
     | mov CARG2, TMP1
@@ -221,13 +286,18 @@ static void jitOpEqual() {
     |1:
     | mov CARG1, JS->valFalse
     |2:
+    |.if JIT_OPT
+    | jpush
+    |.else
     | call64 push
+    |.endif
 }
 
 static void jitOpGreater() {
     | call64 opGreater
     | test rax, rax
     | jz >1
+    | mov rax, 0
     | jmp ->return
     |1:
 }
@@ -236,6 +306,7 @@ static void jitOpLess() {
     | call64 opLess
     | test rax, rax
     | jz >1
+    | mov rax, 0
     | jmp ->return
     |1:
 }
@@ -244,6 +315,7 @@ static void jitOpAdd() {
     | call64 opAdd
     | test rax, rax
     | jz >1
+    | mov rax, 0
     | jmp ->return
     |1:
 }
@@ -252,6 +324,7 @@ static void jitOpSubtract() {
     | call64 opSubtract
     | test rax, rax
     | jz >1
+    | mov rax, 0
     | jmp ->return
     |1:
 }
@@ -260,6 +333,7 @@ static void jitOpMultiply() {
     | call64 opMultiply
     | test rax, rax
     | jz >1
+    | mov rax, 0
     | jmp ->return
     |1:
 }
@@ -268,12 +342,17 @@ static void jitOpDivide() {
     | call64 opDivide
     | test rax, rax
     | jz >1
+    | mov rax, 0
     | jmp ->return
     |1:
 }
 
 static void jitOpNot() {
+    |.if JIT_OPT
+    | jpop
+    |.else 
     | call64 pop
+    |.endif
     | mov CARG1, rax
     | call64 isFalsey
     | test rax, rax
@@ -283,19 +362,28 @@ static void jitOpNot() {
     |1:
     | mov CARG1, JS->valFalse
     |2:
+    |.if JIT_OPT
+    | jpush
+    |.else
     | call64 push
+    |.endif
 }
 
 static void jitOpNegate() {
     | call64 opNegate
     | test rax, rax
     | jz >1
+    | mov rax, 0
     | jmp ->return
     |1:
 }
 
 static void jitOpPrint(Dst_DECL) {
+    |.if JIT_OPT
+    | jpop
+    |.else 
     | call64 pop
+    |.endif
     | mov CARG1, rax
     | call64 printValue
     | mov CARG1, '\n'
@@ -331,19 +419,76 @@ static void jitOpLoop(Dst_DECL, size_t* i) {
     | jmp =>(*i-offset+1)
 }
 
-static void jitOpCall() {}
+static void jitOpCall(Dst_DECL, size_t* i) {
+    (*i)++;
+    uint8_t argCount = J->closure->function->chunk.code[*i];
+    | mov CARG1, argCount
+    | call64 peek
+    | mov CARG1, rax
+    | mov CARG2, argCount
+    | call64 callValue
+    | test rax, rax
+    | jz >1
+    | jmp >2
+    |1: 
+    | mov CARG1, 0
+    | jmp ->return
+    |2:
+    | restorecf
+}
 
 static void jitOpInvoke() {}
 
 static void jitOpSuperInvoke() {}
 
-static void jitOpClosure() {}
+static Value objVal(ObjClosure *closure) {
+    return OBJ_VAL(closure);
+}
+
+static void jitOpClosure(Dst_DECL, size_t* i) {
+    (*i)++;
+    uint8_t idx = J->closure->function->chunk.code[*i];
+    Value constant = J->closure->function->chunk.constants.values[idx];
+    ObjFunction *function = (ObjFunction*)AS_OBJ(constant);
+    | mov64 CARG1, (ptrdiff_t)function
+    | call64 newClosure
+    | mov CLOSURE, rax
+    | mov CARG1, CLOSURE
+    | call64 objVal
+    | mov CARG1, rax
+    |.if JIT_OPT
+    | jpush
+    |.else
+    | call64 push
+    |.endif
+    for (size_t j = 0; j < function->upvalueCount; j++) {
+        uint8_t isLocal = ++(*i);
+        uint8_t index = ++(*i);
+        if (isLocal) {
+            | mov VALUE:TMP1, CF->slots
+            | mov CARG1, VALUE:TMP1[index]
+            | call64 captureUpvalue
+            | mov TMP1, CLOSURE->upvalues
+            | mov OUPVALUE:TMP1[j], rax
+        } else {
+            | mov CLOSURE:TMP1, CF->closure
+            | mov TMP1, CLOSURE->upvalues
+            | mov TMP1, OUPVALUE:TMP1[index]
+            | mov TMP2, CLOSURE->upvalues
+            | mov OUPVALUE:TMP2[j], TMP1
+        }
+    }
+}
 
 static void jitOpCloseUpvalue() {}
 
 static void jitOpReutrn(Dst_DECL) {
+    |.if JIT_OPT
+    | jpop
+    |.else 
     | call64 pop
-    | mov TMP1, rax
+    |.endif
+    | mov JS->value, rax
     | mov CARG1, CF->slots
     | call64 closeUpvalues
     | subfc1
@@ -352,22 +497,24 @@ static void jitOpReutrn(Dst_DECL) {
     | jz >1
     | jmp >2
     |1:
+    |.if JIT_OPT
+    | jpop
+    |.else 
     | call64 pop
-    | mov rax, 0
-    | jmp >3
+    |.endif
+    | mov rax, 1
+    | jmp ->return
     |2:
     | mov TMP2, CF->slots
     | mov VM->stackTop, TMP2
-    | mov CARG1, TMP1
+    | mov CARG1, JS->value
+    |.if JIT_OPT
+    | jpush
+    |.else
     | call64 push
-    | mov TMP2, VM->frames
-    | mov eax, VM->frameCount
-    | sub eax, 1
-    | mov TMP1, sizeof(CallFrame)
-    | mul TMP1
-    | add TMP2, rax
-    | mov CF, TMP2
-    |3:
+    |.endif
+    | restorecf
+    | mov rax, 1
     |->return:
     | pop r15
     | pop r14
@@ -376,7 +523,6 @@ static void jitOpReutrn(Dst_DECL) {
     | pop rbx
     | pop rbx
     | pop rbp
-    | mov rax, 0
     | ret 
 }
 

@@ -1,20 +1,50 @@
-// var a = 555;
-// print(666);
-// a = 123;
-// print(a);
-// if (true) {
-//     print(77777);
-// } else {
-//     print(88888);
-// }
+//var a = 555;
+//print(666);
+//a = 123;
+//print(a);
+//if (true) {
+//    print(77777);
+//} else {
+//    print(88888);
+//}
+//
+//{
+//    var a = 123;
+//    print(a);
+//}
 // 
- {
-     var a = 123;
-     print(a);
- }
-// 
-// print(a);
+//print(a);
 
-while(true) {
-    print(1);
+//while(true) {
+//    print(1);
+//}
+
+fun fib(n) {
+    if (n < 2) {
+        return n;
+    } 
+    return fib(n-2) + fib(n-1);
 }
+
+fib(1);
+var start = clock();
+fib(35);
+var end = clock();
+print(end - start);
+//var a = 0;
+//fun add() {
+//    if (a == 1) {
+//        return 1;
+//    }
+//    a=a+1;
+//    return add();
+//}
+//print(add());
+
+//fun add() {
+//    return 2;
+//}
+//fun sub() {
+//    return add();
+//}
+//print(sub());

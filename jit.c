@@ -171,7 +171,7 @@ void *jitCompile(ObjClosure *closure) {
             break;
         }
         case OP_CALL: {
-            jitOpCall();
+            jitOpCall(Dst, &i);
             break;
         }
         case OP_INVOKE: {
@@ -183,7 +183,7 @@ void *jitCompile(ObjClosure *closure) {
             break;
         }
         case OP_CLOSURE: {
-            jitOpClosure();
+            jitOpClosure(Dst, &i);
             break;
         }
         case OP_CLOSE_UPVALUE:

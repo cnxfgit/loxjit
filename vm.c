@@ -126,7 +126,6 @@ static bool call(ObjClosure *closure, int argCount) {
     }
     // 记录新函数栈帧
 #ifdef OPEN_JIT
-
     if (closure->jitFunc == NULL) {
         void *func = jitCompile(closure);
         closure->jitFunc = func;
@@ -143,7 +142,7 @@ static bool call(ObjClosure *closure, int argCount) {
 }
 
 // 调用 值类型  仅接受 函数 类 方法
-static bool callValue(Value callee, int argCount) {
+bool callValue(Value callee, int argCount) {
     if (IS_OBJ(callee)) {
         switch (OBJ_TYPE(callee)) {
         case OBJ_BOUND_METHOD: {
@@ -225,7 +224,7 @@ static bool bindMethod(ObjClass *klass, ObjString *name) {
 }
 
 // 捕获提升值
-static ObjUpvalue *captureUpvalue(Value *local) {
+ObjUpvalue *captureUpvalue(Value *local) {
     ObjUpvalue *prevUpvalue = NULL;
     ObjUpvalue *upvalue = vm.openUpvalues;
     while (upvalue != NULL && upvalue->location > local) {
