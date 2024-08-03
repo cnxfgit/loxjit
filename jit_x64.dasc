@@ -53,7 +53,7 @@
 |.endmacro
 
 
-|//.define JIT_OPT
+|.define JIT_OPT
 |.macro jpush
 |  mov TMP1, VM->stackTop
 |  mov [TMP1], CARG1
@@ -253,9 +253,31 @@ static void jitOpSetGlobal(Dst_DECL, size_t* i) {
     |1:
 }
 
-static void jitOpGetUpvalue() {}
+static void jitOpGetUpvalue(Dst_DECL, size_t* i) {
+    (*i)++;
+    uint8_t slot = J->closure->function->chunk.code[*i];
+    | mov TMP1, CF->closure
+    | mov TMP1, CLOSURE:TMP1->upvalues
+    | mov TMP1, OUPVALUE:TMP1[slot]
+    | mov CARG1, OUPVALUE:TMP1->location
+    |.if JIT_OPT
+    | jpush
+    |.else
+    | call64 push
+    |.endif
+}
 
-static void jitOpSetUpvalue() {}
+static void jitOpSetUpvalue(Dst_DECL, size_t* i) {
+    (*i)++;
+    uint8_t slot = J->closure->function->chunk.code[*i];
+    | mov CARG1, 0
+    | call64 peek
+    | mov TMP1, CF->closure
+    | mov TMP1, CLOSURE:TMP1->upvalues
+    | mov TMP1, OUPVALUE:TMP1[slot]
+    | mov TMP1, OUPVALUE:TMP1->location
+    | mov [TMP1], rax
+}
 
 static void jitOpGetProperty() {}
 
@@ -437,9 +459,49 @@ static void jitOpCall(Dst_DECL, size_t* i) {
     | restorecf
 }
 
-static void jitOpInvoke() {}
+static void jitOpInvoke(Dst_DECL, size_t* i) {
+    (*i)++;
+    uint8_t idx = J->closure->function->chunk.code[*i];
+    ObjString *method = AS_STRING(J->closure->function->chunk.constants.values[idx]);
+    (*i)++;
+    uint8_t argCount = J->closure->function->chunk.code[*i];
+    | mov64 CARG1, (ptrdiff_t)method
+    | mov CARG2, argCount
+    | call64 invoke
+    | test rax, rax
+    | jz >1
+    | jmp >2
+    |1:
+    | mov rax, 0
+    | jmp ->return 
+    |2:
+    | restorecf
+}
 
-static void jitOpSuperInvoke() {}
+static void jitOpSuperInvoke(Dst_DECL, size_t* i) {
+    (*i)++;
+    uint8_t idx = J->closure->function->chunk.code[*i];
+    ObjString *method = AS_STRING(J->closure->function->chunk.constants.values[idx]);
+    (*i)++;
+    uint8_t argCount = J->closure->function->chunk.code[*i];
+    |.if JIT_OPT
+    | jpop
+    |.else 
+    | call64 pop
+    |.endif
+    | mov CARG1, rax
+    | mov64 CARG2, (ptrdiff_t)method
+    | mov CARG3, argCount
+    | call64 invokeFromClass
+    | test rax, rax
+    | jz >1
+    | jmp >2
+    |1:
+    | mov rax, 0
+    | jmp ->return 
+    |2:
+    | restorecf
+}
 
 static Value objVal(ObjClosure *closure) {
     return OBJ_VAL(closure);
@@ -480,7 +542,16 @@ static void jitOpClosure(Dst_DECL, size_t* i) {
     }
 }
 
-static void jitOpCloseUpvalue() {}
+static void jitOpCloseUpvalue() {
+    | mov VALUE:CARG1, VM->stackTop
+    | sub VALUE:CARG1, #VALUE
+    | call64 closeUpvalues
+    |.if JIT_OPT
+    | jpop
+    |.else 
+    | call64 pop
+    |.endif
+}
 
 static void jitOpReutrn(Dst_DECL) {
     |.if JIT_OPT
@@ -526,8 +597,35 @@ static void jitOpReutrn(Dst_DECL) {
     | ret 
 }
 
-static void jitOpClass() {}
+static void jitOpClass(Dst_DECL, size_t* i) {
+    (*i)++;
+    uint8_t idx = J->closure->function->chunk.code[*i];
+    ObjString *name = AS_STRING(J->closure->function->chunk.constants.values[idx]);
+    | mov64 CARG1, (ptrdiff_t)name
+    | call64 newClass
+    | mov CARG1, rax
+    | call64 objVal
+    | mov CARG1, rax
+    |.if JIT_OPT
+    | jpush
+    |.else
+    | call64 push
+    |.endif
+}
 
-static void jitOpInherit() {}
+static void jitOpInherit() {
+    | call64 opInherit
+    | test rax, rax
+    | jz >1
+    | mov rax, 0
+    | jmp ->return
+    |1:
+}
 
-static void jitOpMethod() {}
+static void jitOpMethod(Dst_DECL, size_t* i) {
+    (*i)++;
+    uint8_t idx = J->closure->function->chunk.code[*i];
+    ObjString *name = AS_STRING(J->closure->function->chunk.constants.values[idx]);
+    | mov64 CARG1, (ptrdiff_t)name
+    | call64 defineMethod
+}

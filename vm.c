@@ -180,7 +180,7 @@ bool callValue(Value callee, int argCount) {
 }
 
 // 从类中执行方法
-static bool invokeFromClass(ObjClass *klass, ObjString *name, int argCount) {
+bool invokeFromClass(ObjClass *klass, ObjString *name, int argCount) {
     Value method;
     if (!tableGet(&klass->methods, name, &method)) {
         runtimeError("Undefined property '%s'.", name->chars);
@@ -190,7 +190,7 @@ static bool invokeFromClass(ObjClass *klass, ObjString *name, int argCount) {
 }
 
 // 执行方法
-static bool invoke(ObjString *name, int argCount) {
+bool invoke(ObjString *name, int argCount) {
     Value receiver = peek(argCount);
 
     if (!IS_INSTANCE(receiver)) {
@@ -260,7 +260,7 @@ void closeUpvalues(Value *last) {
 }
 
 // 定义方法
-static void defineMethod(ObjString *name) {
+void defineMethod(ObjString *name) {
     Value method = peek(0);
     ObjClass *klass = AS_CLASS(peek(1));
     tableSet(&klass->methods, name, method);
@@ -367,6 +367,19 @@ int opNegate() {
         return INTERPRET_RUNTIME_ERROR;
     }
     push(NUMBER_VAL(-AS_NUMBER(pop())));
+    return INTERPRET_OK;
+}
+
+int opInherit() {
+    Value superclass = peek(1);
+    if (!IS_CLASS(superclass)) {
+        runtimeError("Superclass must be a class.");
+        return INTERPRET_RUNTIME_ERROR;
+    }
+
+    ObjClass *subclass = AS_CLASS(peek(0));
+    tableAddAll(&AS_CLASS(superclass)->methods, &subclass->methods);
+    pop(); // Subclass.
     return INTERPRET_OK;
 }
 

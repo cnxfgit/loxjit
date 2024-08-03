@@ -106,11 +106,11 @@ void *jitCompile(ObjClosure *closure) {
             break;
         }
         case OP_GET_UPVALUE: {
-            jitOpGetUpvalue();
+            jitOpGetUpvalue(Dst, &i);
             break;
         }
         case OP_SET_UPVALUE: {
-            jitOpSetUpvalue();
+            jitOpSetUpvalue(Dst, &i);
             break;
         }
         case OP_GET_PROPERTY: {
@@ -175,11 +175,11 @@ void *jitCompile(ObjClosure *closure) {
             break;
         }
         case OP_INVOKE: {
-            jitOpInvoke();
+            jitOpInvoke(Dst, &i);
             break;
         }
         case OP_SUPER_INVOKE: {
-            jitOpSuperInvoke();
+            jitOpSuperInvoke(Dst, &i);
             break;
         }
         case OP_CLOSURE: {
@@ -194,14 +194,14 @@ void *jitCompile(ObjClosure *closure) {
             break;
         }
         case OP_CLASS:
-            jitOpClass();
+            jitOpClass(Dst, &i);
             break;
         case OP_INHERIT: {
             jitOpInherit();
             break;
         }
         case OP_METHOD:
-            jitOpMethod();
+            jitOpMethod(Dst, &i);
             break;
         }
     }

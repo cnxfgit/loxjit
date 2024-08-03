@@ -95,4 +95,12 @@ ObjUpvalue *captureUpvalue(Value *local);
 
 bool callValue(Value callee, int argCount);
 
+void defineMethod(ObjString *name);
+
+int opInherit();
+
+bool invokeFromClass(ObjClass *klass, ObjString *name, int argCount);
+
+bool invoke(ObjString *name, int argCount);
+
 #endif
