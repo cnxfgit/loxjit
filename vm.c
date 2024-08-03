@@ -122,17 +122,22 @@ static bool call(ObjClosure *closure, int argCount) {
         return false;
     }
     // 记录新函数栈帧
-    CallFrame *frame = &vm.frames[vm.frameCount++];
-    frame->closure = closure;
-    frame->ip = closure->function->chunk.code;
-    frame->slots = vm.stackTop - argCount - 1;
-
+#ifdef OPEN_JIT
+    
     if (closure->jitFunc == NULL) {
         void * func = jitCompile(closure);
         closure->jitFunc = func;
     }
 
     return ((int (*)(JitState *))closure->jitFunc)(vm.J);
+#else
+    CallFrame *frame = &vm.frames[vm.frameCount++];
+    frame->closure = closure;
+    frame->ip = closure->function->chunk.code;
+    frame->slots = vm.stackTop - argCount - 1;
+    return true;
+#endif
+    
 }
 
 // 调用 值类型  仅接受 函数 类 方法
@@ -601,5 +606,10 @@ InterpretResult interpret(const char *source) {
     pop();
     push(OBJ_VAL(closure));
     
-    return call(closure, 0);
+#ifdef OPEN_JIT
+    return call(closure, 0) ? INTERPRET_OK : INTERPRET_RUNTIME_ERROR;
+#else
+    call(closure, 0);
+    return run();
+#endif
 }

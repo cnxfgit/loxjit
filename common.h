@@ -27,4 +27,7 @@
 // 局部变量最多值
 #define UINT8_COUNT (UINT8_MAX + 1)
 
+// 是否开启JIT功能
+#define OPEN_JIT 
+
 #endif

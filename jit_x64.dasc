@@ -78,13 +78,11 @@ static void preCall(Dst_DECL) {
     | push r15
     | mov JS, CARG1
     | mov64 VM, (ptrdiff_t)&vm
-    | mov eax, VM->frameCount
-    | sub eax, 1
-    | mov TMP1, sizeof(CallFrame)
-    | mul TMP1
-    | mov TMP2, VM->frames
-    | add TMP2, rax
-    | mov CF, TMP2
+    | add dword VM->frameCount, 1
+    | mov CF, VM
+    | mov CF, CF[vm.frameCount-1]
+    | mov64 TMP1, (ptrdiff_t)(vm.stackTop - (J->closure->function->arity) - 1)
+    | mov CF->slots, TMP1
     | mov TOP, VM->stackTop
 }
 
@@ -121,9 +119,22 @@ static void jitOpPop(Dst_DECL) {
     | call64 pop
 }
 
-static void jitOpGetLocal() {}
+static void jitOpGetLocal(Dst_DECL, size_t* i) {
+    (*i)++;
+    uint8_t slot = J->closure->function->chunk.code[*i];
+    | mov VALUE:TMP1, CF->slots
+    | mov CARG1, VALUE:TMP1[slot]
+    | call64 push
+}
 
-static void jitOpSetLocal() {}
+static void jitOpSetLocal(Dst_DECL, size_t* i) {
+    (*i)++;
+    uint8_t slot = J->closure->function->chunk.code[*i];
+    | mov CARG1, 0
+    | call64 peek
+    | mov VALUE:TMP1, CF->slots
+    | mov VALUE:TMP1[slot], rax
+}
 
 static void jitOpGetGlobal(Dst_DECL, size_t* i) {
     (*i)++;

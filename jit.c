@@ -86,11 +86,11 @@ void *jitCompile(ObjClosure *closure) {
             jitOpPop(Dst);
             break;
         case OP_GET_LOCAL: {
-            jitOpGetLocal();
+            jitOpGetLocal(Dst, &i);
             break;
         }
         case OP_SET_LOCAL: {
-            jitOpSetLocal();
+            jitOpSetLocal(Dst, &i);
             break;
         }
         case OP_GET_GLOBAL: {
