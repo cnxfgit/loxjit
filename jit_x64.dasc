@@ -232,7 +232,13 @@ static void jitOpGreater() {
     |1:
 }
 
-static void jitOpLess() {}
+static void jitOpLess() {
+    | call64 opLess
+    | test rax, rax
+    | jz >1
+    | jmp ->return
+    |1:
+}
 
 static void jitOpAdd() {
     | call64 opAdd
@@ -242,15 +248,51 @@ static void jitOpAdd() {
     |1:
 }
 
-static void jitOpSubtract() {}
+static void jitOpSubtract() {
+    | call64 opSubtract
+    | test rax, rax
+    | jz >1
+    | jmp ->return
+    |1:
+}
 
-static void jitOpMultiply() {}
+static void jitOpMultiply() {
+    | call64 opMultiply
+    | test rax, rax
+    | jz >1
+    | jmp ->return
+    |1:
+}
 
-static void jitOpDivide() {}
+static void jitOpDivide() {
+    | call64 opDivide
+    | test rax, rax
+    | jz >1
+    | jmp ->return
+    |1:
+}
 
-static void jitOpNot() {}
+static void jitOpNot() {
+    | call64 pop
+    | mov CARG1, rax
+    | call64 isFalsey
+    | test rax, rax
+    | jz >1
+    | mov CARG1, JS->valTrue
+    | jmp >2
+    |1:
+    | mov CARG1, JS->valFalse
+    |2:
+    | call64 push
+}
 
-static void jitOpNegate() {}
+static void jitOpNegate() {
+    | call64 opNegate
+    | test rax, rax
+    | jz >1
+    | jmp ->return
+    |1:
+}
 
 static void jitOpPrint(Dst_DECL) {
     | call64 pop
@@ -282,7 +324,12 @@ static void jitOpJumpIfFalse(Dst_DECL, size_t* i) {
     |1:
 }
 
-static void jitOpLoop() {}
+static void jitOpLoop(Dst_DECL, size_t* i) {
+    (*i)+=2;
+    uint8_t *code = J->closure->function->chunk.code;
+    uint16_t offset = (uint16_t)((code[*i-1] << 8) | code[*i]);
+    | jmp =>(*i-offset+1)
+}
 
 static void jitOpCall() {}
 

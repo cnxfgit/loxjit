@@ -81,4 +81,14 @@ int opAdd();
 
 int opGreater();
 
+int opLess();
+
+int opSubtract();
+
+int opMultiply();
+
+int opDivide();
+
+int opNegate();
+
 #endif

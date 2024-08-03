@@ -167,7 +167,7 @@ void *jitCompile(ObjClosure *closure) {
             break;
         }
         case OP_LOOP: {
-            jitOpLoop();
+            jitOpLoop(Dst, &i);
             break;
         }
         case OP_CALL: {

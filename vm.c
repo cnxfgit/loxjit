@@ -318,6 +318,59 @@ int opGreater() {
     return INTERPRET_OK;
 }
 
+int opLess() {
+    if (!IS_NUMBER(peek(0)) || !IS_NUMBER(peek(1))) {
+        runtimeError("Operands must be numbers.");
+        return INTERPRET_RUNTIME_ERROR;
+    }
+    double b = AS_NUMBER(pop());
+    double a = AS_NUMBER(pop());
+    push(BOOL_VAL(a < b));
+    return INTERPRET_OK;
+}
+
+int opSubtract() {
+    if (!IS_NUMBER(peek(0)) || !IS_NUMBER(peek(1))) {
+        runtimeError("Operands must be numbers.");
+        return INTERPRET_RUNTIME_ERROR;
+    }
+    double b = AS_NUMBER(pop());
+    double a = AS_NUMBER(pop());
+    push(NUMBER_VAL(a - b));
+    return INTERPRET_OK;
+}
+
+int opMultiply() {
+    if (!IS_NUMBER(peek(0)) || !IS_NUMBER(peek(1))) {
+        runtimeError("Operands must be numbers.");
+        return INTERPRET_RUNTIME_ERROR;
+    }
+    double b = AS_NUMBER(pop());
+    double a = AS_NUMBER(pop());
+    push(NUMBER_VAL(a * b));
+    return INTERPRET_OK;
+}
+
+int opDivide() {
+    if (!IS_NUMBER(peek(0)) || !IS_NUMBER(peek(1))) {
+        runtimeError("Operands must be numbers.");
+        return INTERPRET_RUNTIME_ERROR;
+    }
+    double b = AS_NUMBER(pop());
+    double a = AS_NUMBER(pop());
+    push(NUMBER_VAL(a / b));
+    return INTERPRET_OK;
+}
+
+int opNegate() {
+    if (!IS_NUMBER(peek(0))) {
+        runtimeError("Operand must be a number.");
+        return INTERPRET_RUNTIME_ERROR;
+    }
+    push(NUMBER_VAL(-AS_NUMBER(pop())));
+    return INTERPRET_OK;
+}
+
 // 虚拟机运行时
 static InterpretResult run() {
     // 拿到vm中的栈帧
