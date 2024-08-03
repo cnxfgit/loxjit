@@ -307,6 +307,17 @@ int opAdd() {
     }
 }
 
+int opGreater() {
+    if (!IS_NUMBER(peek(0)) || !IS_NUMBER(peek(1))) {
+        runtimeError("Operands must be numbers.");
+        return INTERPRET_RUNTIME_ERROR;
+    }
+    double b = AS_NUMBER(pop());
+    double a = AS_NUMBER(pop());
+    push(BOOL_VAL(a > b));
+    return INTERPRET_OK;
+}
+
 // 虚拟机运行时
 static InterpretResult run() {
     // 拿到vm中的栈帧

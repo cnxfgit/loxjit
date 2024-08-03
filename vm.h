@@ -79,4 +79,6 @@ bool isFalsey(Value value);
 
 int opAdd();
 
+int opGreater();
+
 #endif

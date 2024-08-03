@@ -224,7 +224,13 @@ static void jitOpEqual() {
     | call64 push
 }
 
-static void jitOpGreater() {}
+static void jitOpGreater() {
+    | call64 opGreater
+    | test rax, rax
+    | jz >1
+    | jmp ->return
+    |1:
+}
 
 static void jitOpLess() {}
 
