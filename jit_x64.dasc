@@ -66,6 +66,15 @@
 |  mov rax, [TMP1]
 |.endmacro
 
+|.macro jpeek
+|  mov TMP2, VM->stackTop
+|  add CARG1, 1
+|  imul CARG1, #VALUE
+|  sub TMP2, CARG1
+|  mov rax, [TMP2]
+|.endmacro
+
+
 |.macro restorecf
 | mov CF, VM
 | mov eax, VM->frameCount
@@ -181,7 +190,11 @@ static void jitOpSetLocal(Dst_DECL, size_t* i) {
     (*i)++;
     uint8_t slot = J->closure->function->chunk.code[*i];
     | mov CARG1, 0
+    |.if JIT_OPT
+    | jpeek
+    |.else
     | call64 peek
+    |.endif
     | mov VALUE:TMP1, CF->slots
     | mov VALUE:TMP1[slot], rax
 }
@@ -217,7 +230,11 @@ static void jitOpDefineGlobal(Dst_DECL, size_t* i) {
     uint8_t idx = J->closure->function->chunk.code[*i];
     ObjString *name = AS_STRING(J->closure->function->chunk.constants.values[idx]);
     | mov CARG1, 0
+    |.if JIT_OPT
+    | jpeek
+    |.else
     | call64 peek
+    |.endif
     | mov64 CARG1, (ptrdiff_t)&vm.globals
     | mov64 CARG2, (ptrdiff_t)name
     | mov CARG3, rax
@@ -234,7 +251,11 @@ static void jitOpSetGlobal(Dst_DECL, size_t* i) {
     uint8_t idx = J->closure->function->chunk.code[*i];
     ObjString *name = AS_STRING(J->closure->function->chunk.constants.values[idx]);
     | mov CARG1, 0
+    |.if JIT_OPT
+    | jpeek
+    |.else
     | call64 peek
+    |.endif
     | mov64 CARG1, (ptrdiff_t)&vm.globals
     | mov64 CARG2, (ptrdiff_t)name
     | mov CARG3, rax
@@ -271,7 +292,11 @@ static void jitOpSetUpvalue(Dst_DECL, size_t* i) {
     (*i)++;
     uint8_t slot = J->closure->function->chunk.code[*i];
     | mov CARG1, 0
+    |.if JIT_OPT
+    | jpeek
+    |.else
     | call64 peek
+    |.endif
     | mov TMP1, CF->closure
     | mov TMP1, CLOSURE:TMP1->upvalues
     | mov TMP1, OUPVALUE:TMP1[slot]
@@ -279,11 +304,45 @@ static void jitOpSetUpvalue(Dst_DECL, size_t* i) {
     | mov [TMP1], rax
 }
 
-static void jitOpGetProperty() {}
+static void jitOpGetProperty() {
+    | call64 opGetProperty
+    | test rax, rax
+    | jz >1
+    | mov rax, 0
+    | jmp ->return
+    |1:
+}
 
-static void jitOpSetProperty() {}
+static void jitOpSetProperty() {
+    | call64 opSetProperty
+    | test rax, rax
+    | jz >1
+    | mov rax, 0
+    | jmp ->return
+    |1:
+}
 
-static void jitOpGetSuper() {}
+static void jitOpGetSuper(Dst_DECL, size_t* i) {
+    (*i)++;
+    uint8_t idx = J->closure->function->chunk.code[*i];
+    ObjString *name = AS_STRING(J->closure->function->chunk.constants.values[idx]);
+    |.if JIT_OPT
+    | jpop
+    |.else 
+    | call64 pop
+    |.endif
+    | mov CARG1, rax
+    | mov64 CARG2, (ptrdiff_t)name
+    | call64 bindMethod
+    | test rax, rax
+    | jz >1
+    | jmp >2
+    |1:
+    | mov rax, 0
+    | jmp ->return
+    |2:
+
+}
 
 static void jitOpEqual() {
     |.if JIT_OPT
@@ -425,7 +484,11 @@ static void jitOpJumpIfFalse(Dst_DECL, size_t* i) {
     uint8_t *code = J->closure->function->chunk.code;
     uint16_t offset = (uint16_t)((code[*i-1] << 8) | code[*i]);
     | mov CARG1, 0
+    |.if JIT_OPT
+    | jpeek
+    |.else
     | call64 peek
+    |.endif
     | mov CARG1, rax
     | call64 isFalsey
     | test rax, rax
@@ -445,7 +508,11 @@ static void jitOpCall(Dst_DECL, size_t* i) {
     (*i)++;
     uint8_t argCount = J->closure->function->chunk.code[*i];
     | mov CARG1, argCount
+    |.if JIT_OPT
+    | jpeek
+    |.else
     | call64 peek
+    |.endif
     | mov CARG1, rax
     | mov CARG2, argCount
     | call64 callValue

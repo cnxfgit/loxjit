@@ -210,7 +210,7 @@ bool invoke(ObjString *name, int argCount) {
 }
 
 // 绑定方法给实例
-static bool bindMethod(ObjClass *klass, ObjString *name) {
+bool bindMethod(ObjClass *klass, ObjString *name) {
     Value method;
     if (!tableGet(&klass->methods, name, &method)) {
         runtimeError("Undefined property '%s'.", name->chars);
@@ -380,6 +380,16 @@ int opInherit() {
     ObjClass *subclass = AS_CLASS(peek(0));
     tableAddAll(&AS_CLASS(superclass)->methods, &subclass->methods);
     pop(); // Subclass.
+    return INTERPRET_OK;
+}
+
+int opGetProperty() {
+    // todo
+    return INTERPRET_OK;
+}
+
+int opSetProperty() {
+    // todo
     return INTERPRET_OK;
 }
 

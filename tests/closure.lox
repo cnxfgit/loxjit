@@ -1,0 +1,18 @@
+fun closure() {
+    var count = 0;
+    fun add() {
+        count = count + 1;
+        return count;
+    }
+    return add;
+}
+
+var add1 = closure();
+var add2 = closure();
+var start = clock();
+for (var i = 0;i < 10000000; i=i+1) {
+    add1();
+    add2();
+}
+var end = clock();
+print end - start;

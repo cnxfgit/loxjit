@@ -1,0 +1,11 @@
+fun add(n){
+    var a = 1;
+    for (var i = 0;i < n; i=i+1) {
+        a = a + i;
+    }
+}
+
+var start = clock();
+add(10000000);
+var end = clock();
+print end - start;

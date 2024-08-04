@@ -122,7 +122,7 @@ void *jitCompile(ObjClosure *closure) {
             break;
         }
         case OP_GET_SUPER: {
-            jitOpGetSuper();
+            jitOpGetSuper(Dst, &i);
             break;
         }
         case OP_EQUAL: {

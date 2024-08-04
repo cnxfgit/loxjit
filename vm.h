@@ -103,4 +103,10 @@ bool invokeFromClass(ObjClass *klass, ObjString *name, int argCount);
 
 bool invoke(ObjString *name, int argCount);
 
+int opGetProperty();
+
+int opSetProperty();
+
+bool bindMethod(ObjClass *klass, ObjString *name);
+
 #endif

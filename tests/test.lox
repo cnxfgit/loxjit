@@ -19,18 +19,18 @@
 //    print(1);
 //}
 
-fun fib(n) {
-    if (n < 2) {
-        return n;
-    } 
-    return fib(n-2) + fib(n-1);
-}
-
-fib(1);
-var start = clock();
-fib(35);
-var end = clock();
-print(end - start);
+//fun fib(n) {
+//    if (n < 2) {
+//        return n;
+//    } 
+//    return fib(n-2) + fib(n-1);
+//}
+//
+//fib(1);
+//var start = clock();
+//fib(35);
+//var end = clock();
+//print(end - start);
 //var a = 0;
 //fun add() {
 //    if (a == 1) {
@@ -48,3 +48,26 @@ print(end - start);
 //    return add();
 //}
 //print(sub());
+
+//var a = 1;
+//var start = clock();
+//for (var i = 0;i < 1000000; i=i+1) {
+//    a = a + i;
+//    a = a * 2;
+//    a = a / 3;
+//}
+//var end = clock();
+//print end - start;
+
+fun add(n){
+    var a = 1;
+    for (var i = 0;i < n; i=i+1) {
+        a = a + i;
+    }
+}
+
+add(1);
+var start = clock();
+add(1000000);
+var end = clock();
+print end - start;
